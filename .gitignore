@@ -199,3 +199,5 @@ kb_docs_samples/summaries_refine.pkl
 demo_06_transaction_data_understanding.ipynb
 qna - ai knowledge exchange.zip
 London Brochure.json
+
+local.settings.json

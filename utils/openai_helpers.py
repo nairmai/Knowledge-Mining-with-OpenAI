@@ -32,7 +32,11 @@ from utils.env_vars import *
 
 import openai
 openai.api_version = OPENAI_API_VERSION
-
+openai.api_type = "azure"
+openai.api_base = "https://mn-openai.openai.azure.com/"
+openai.api_version = "2023-03-15-preview"
+openai.api_key = ""
+engine = "gpt-35-turbo"
 
 
 system_start_prompt = "<|im_start|>system "
@@ -62,13 +66,13 @@ def check_model_deployment(oai_model):
                 model_exists = True
                 #logging.info(f"Found deployment {deployment}")
                 return deployment["id"]
-                
 
-        if not model_exists: 
+
+        if not model_exists:
             openai.Deployment.create(model=oai_model, scale_settings={"scale_type":"standard"})
             time.sleep(30)
         assert model_exists, f"Model {oai_model} is not deployed, deploying now"
-        
+
     except Exception as e:
 
         print(e)
@@ -86,10 +90,10 @@ def check_model_deployment(oai_model):
                     deployed = True
                     print(f"The right model {deployment['model']} was found")
                     return deployment["id"]
-            
+
             if deployed: break
-            
-            counter += 1   
+
+            counter += 1
 
     return ""
 
@@ -104,13 +108,13 @@ def experiment_prompt(context, query):
 
     prompt =f"""
     Context: {context}
-    
-    Question: {query}       
-    
-    
+
+    Question: {query}
+
+
     Answer the question using the above Context only, and if the answer is not contained within the Context above, say "Sorry, I don't know":
     """
-    
+
 
 
 def get_summ_prompt(text):
@@ -166,19 +170,19 @@ def get_model_max_tokens(model):
     if model == "text-search-davinci-doc-001":
         return DAVINCI_003_EMB_MAX_TOKENS
     elif model == "text-search-davinci-query-001":
-        return DAVINCI_003_EMB_MAX_TOKENS        
+        return DAVINCI_003_EMB_MAX_TOKENS
     elif model == "text-davinci-003":
-        return DAVINCI_003_MODEL_MAX_TOKENS        
+        return DAVINCI_003_MODEL_MAX_TOKENS
     elif model == "text-embedding-ada-002":
         return ADA_002_MODEL_MAX_TOKENS
     elif model == "gpt-35-turbo":
-        return GPT35_TURBO_COMPLETIONS_MAX_TOKENS        
+        return GPT35_TURBO_COMPLETIONS_MAX_TOKENS
     elif model == "gpt-35-turbo-16k":
-        return GPT35_TURBO_16K_COMPLETIONS_MAX_TOKENS        
+        return GPT35_TURBO_16K_COMPLETIONS_MAX_TOKENS
     elif model == "gpt-4-32k":
-        return GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS     
+        return GPT4_32K_COMPLETIONS_MODEL_MAX_TOKENS
     elif model == "gpt-4":
-        return GPT4_COMPLETIONS_MODEL_MAX_TOKENS             
+        return GPT4_COMPLETIONS_MODEL_MAX_TOKENS
     else:
         return GPT35_TURBO_COMPLETIONS_MAX_TOKENS
 
@@ -188,16 +192,16 @@ def get_encoding_name(model):
         return "p50k_base"
     elif model == "text-embedding-ada-002":
         return "cl100k_base"
-    elif model == "gpt-35-turbo": 
+    elif model == "gpt-35-turbo":
         return "cl100k_base"
-    elif model == "gpt-35-turbo-16k": 
-        return "cl100k_base"        
+    elif model == "gpt-35-turbo-16k":
+        return "cl100k_base"
     elif model == "gpt-4-32k":
         return "cl100k_base"
     elif model == "gpt-4":
-        return "cl100k_base"               
+        return "cl100k_base"
     elif model == "text-davinci-003":
-        return "p50k_base"  
+        return "p50k_base"
     else:
         return "gpt2"
 
@@ -207,16 +211,16 @@ def get_encoder(model):
         return tiktoken.get_encoding("p50k_base")
     elif model == "text-embedding-ada-002":
         return tiktoken.get_encoding("cl100k_base")
-    elif model == "gpt-35-turbo": 
+    elif model == "gpt-35-turbo":
         return tiktoken.get_encoding("cl100k_base")
-    elif model == "gpt-35-turbo-16k": 
-        return tiktoken.get_encoding("cl100k_base")        
+    elif model == "gpt-35-turbo-16k":
+        return tiktoken.get_encoding("cl100k_base")
     elif model == "gpt-4-32k":
         return tiktoken.get_encoding("cl100k_base")
     elif model == "gpt-4":
-        return tiktoken.get_encoding("cl100k_base")                
+        return tiktoken.get_encoding("cl100k_base")
     elif model == "text-davinci-003":
-        return tiktoken.get_encoding("p50k_base")           
+        return tiktoken.get_encoding("p50k_base")
     else:
         return tiktoken.get_encoding("gpt2")
 
@@ -256,7 +260,7 @@ def contact_openai(prompt, completion_model = CHOSEN_COMP_MODEL, max_output_toke
 
 
     b = time.time()
-    openai.api_version = "2023-07-01-preview"
+    openai.api_version = "2023-03-15-preview"
 
     if not isinstance(prompt, list):
         prompt = [{'role':'user', 'content': prompt}]
@@ -266,7 +270,7 @@ def contact_openai(prompt, completion_model = CHOSEN_COMP_MODEL, max_output_toke
                 messages=prompt,
                 temperature=TEMPERATURE,
                 max_tokens=max_output_tokens,
-                engine=completion_model,
+                engine=engine,
                 stream = stream
             )
     else:
@@ -274,15 +278,15 @@ def contact_openai(prompt, completion_model = CHOSEN_COMP_MODEL, max_output_toke
                 messages=prompt,
                 temperature=TEMPERATURE,
                 max_tokens=max_output_tokens,
-                engine=completion_model,
-                functions=functions,
-                function_call="auto",
+                engine=engine,
+                # functions=functions,
+                # function_call="auto",
                 stream = stream
             )
     a = time.time()
-    if verbose: print(f"Using GPT-4 - Chat Completion - with stream {stream} - OpenAI response time: {a-b}")   
+    if verbose: print(f"Using GPT-4 - Chat Completion - with stream {stream} - OpenAI response time: {a-b}")
     if stream: return resp
-    else: 
+    else:
         if functions is None:
             return resp["choices"][0]["message"]['content'].strip(" \n")
         else:
